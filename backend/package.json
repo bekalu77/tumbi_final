@@ -1,0 +1,31 @@
+{
+  "name": "tumbi-backend-worker",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/worker.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run dev",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev --remote --ip 127.0.0.1 --port 8787"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.5",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "hono": "^4.11.4",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240419.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/dotenv": "^8.2.0",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.14.2",
+    "@types/pg": "^8.11.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5",
+    "wrangler": "^3.51.0"
+  }
+}

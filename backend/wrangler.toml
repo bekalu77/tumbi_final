@@ -1,0 +1,19 @@
+# wrangler.toml
+name = "tumbi-backend"
+main = "src/worker.ts"
+compatibility_date = "2024-04-05"
+
+[vars]
+R2_PUBLIC_URL = "https://pub-f4faac6ec4e94df08e2c56afbf983bf1.r2.dev"
+ADMIN_PHONE = "+251912886217"
+
+# Note: The following variables are managed as secrets in Cloudflare:
+# - DATABASE_URL
+# - JWT_SECRET
+# - TELEGRAM_BOT_TOKEN
+
+# Bind your R2 bucket
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "tumbiapp"
+preview_bucket_name = "tumbiapp"
