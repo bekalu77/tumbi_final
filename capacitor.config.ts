@@ -1,16 +1,14 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.tumbi.app',
-  appName: 'Tumbi Marketplace',
+  appId: 'app.tumbi.final',
+  appName: 'Tumbi',
   webDir: 'dist',
   server: {
-    url: 'https://tumbi-app.vercel.app/',
     androidScheme: 'https',
-    cleartext: true,
     allowNavigation: [
-      'tumbi-app.vercel.app',
-      'tumbi-backend.bekalu77.workers.dev'
+      'tumbi-backend.bekalu77.workers.dev',
+      'ep-late-sea-a4cd0akc-pooler.us-east-1.aws.neon.tech'
     ]
   }
 };
