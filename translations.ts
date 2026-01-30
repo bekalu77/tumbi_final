@@ -4,6 +4,7 @@ export type Language = 'en' | 'am';
 export const translations = {
   en: {
     appName: 'TUMBI',
+    currency: 'ETB',
     searchPlaceholder: 'I am looking for...',
     allCities: 'All Cities',
     subCategories: 'Sub-Categories',
@@ -84,6 +85,7 @@ export const translations = {
   },
   am: {
     appName: 'ቱምቢ',
+    currency: 'ብር',
     searchPlaceholder: 'የሚፈልጉትን ይጥቀሱ...',
     allCities: 'ሁሉም ከተሞች',
     subCategories: 'ንዑስ ክፍሎች',

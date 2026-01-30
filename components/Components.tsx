@@ -311,7 +311,7 @@ export const ListingCard = memo(({ listing, onClick, isSaved = false, onToggleSa
         </div>
         <div className="p-1.5">
           <h3 className="font-medium text-xs text-gray-800 dark:text-dark-text line-clamp-1 leading-tight">{listing.title}</h3>
-          <p className="text-sm font-black text-tumbi-600 dark:text-tumbi-400 mt-0.5">ETB {listing.price.toLocaleString()} <span className="text-[10px] font-normal text-gray-500 dark:text-dark-subtext">/{getUnitDisplay(listing.unit, language)}</span></p>
+          <p className="text-sm font-black text-tumbi-600 dark:text-tumbi-400 mt-0.5">{t.currency} {listing.price.toLocaleString()} <span className="text-[10px] font-normal text-gray-500 dark:text-dark-subtext">/{getUnitDisplay(listing.unit, language)}</span></p>
           <div className="text-[9px] text-gray-500 dark:text-dark-subtext mt-1 space-y-0.5">
             <div className="flex items-center"><MapPinIcon className="w-2.5 h-2.5 mr-1 flex-shrink-0" /><span className="truncate">{listing.location}</span></div>
             <div className="flex flex-wrap gap-1 mt-1">
@@ -473,7 +473,7 @@ export const EditProfileModal = ({ user, onClose, onSave, language }: { user: Us
 
     return (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white dark:bg-dark-card rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative">
+            <div className="bg-white dark:bg-dark-card rounded-2xl w-full max-sm overflow-hidden shadow-2xl relative">
                 <button onClick={onClose} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full text-gray-500"><XIcon className="w-5 h-5" /></button>
                 <div className="p-8">
                     <div className="text-center mb-6">
@@ -709,7 +709,7 @@ export const DetailView = ({ listing, onBack, isSaved, onToggleSave, user, onEdi
             const shareUrl = `${window.location.origin}/?listing=${listing.shareSlug || listing.id}`;
             await Share.share({
                 title: listing.title,
-                text: `${listing.title} - ETB ${listing.price.toLocaleString()}\nCheck this out on Tumbi!`,
+                text: `${listing.title} - ${t.currency} ${listing.price.toLocaleString()}\nCheck this out on Tumbi!`,
                 url: shareUrl,
                 dialogTitle: 'Share Listing',
             });
@@ -776,7 +776,7 @@ export const DetailView = ({ listing, onBack, isSaved, onToggleSave, user, onEdi
                             {listing.isVerified && <div className="ml-2 text-blue-500"><VerifiedIcon className="w-6 h-6" /></div>}
                         </div>
 
-                        <div className="text-2xl font-black text-tumbi-600">ETB {listing.price.toLocaleString()} <span className="text-sm font-normal text-gray-500">/{getUnitDisplay(listing.unit, language)}</span></div>
+                        <div className="text-2xl font-black text-tumbi-600">{t.currency} {listing.price.toLocaleString()} <span className="text-sm font-normal text-gray-500">/{getUnitDisplay(listing.unit, language)}</span></div>
                         
                         <div className="flex items-center space-x-2 text-sm text-gray-500"><MapPinIcon className="w-4 h-4" /><span>{listing.location}</span></div>
                         

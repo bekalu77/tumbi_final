@@ -28,14 +28,32 @@ const TELEGRAM_CHATS = [
 async function postToTelegram(listing: any, env: Bindings) {
     if (!env.TELEGRAM_BOT_TOKEN) return;
 
+    let sellerName = listing.sellerName;
+    let sellerCompanyName = listing.sellerCompanyName;
+    
+    // Fetch seller info if not provided (e.g., from an update or admin task)
+    if (!sellerName && listing.user_id) {
+        try {
+            const sql = neon(env.DATABASE_URL);
+            const user = await sql`SELECT name, company_name FROM users WHERE id = ${listing.user_id}`;
+            if (user.length) {
+                sellerName = user[0].name;
+                sellerCompanyName = user[0].company_name;
+            }
+        } catch (e) {
+            console.error("Error fetching seller for Telegram post:", e);
+        }
+    }
+
+    const header = sellerCompanyName || sellerName || 'Tumbi Marketplace';
     const firstImage = listing.imageUrls && listing.imageUrls.length > 0 ? listing.imageUrls[0] : null;
     const shareUrl = `https://tumbi.app/?listing=${listing.share_slug || listing.id}`;
     
     const caption = `
-🚀 *New Listing on Tumbi*
+🚀 *${header}*
 
 *${listing.title}*
-💰 *Price:* ${listing.price} ETB ${listing.unit ? `/ ${listing.unit}` : ''}
+💰 *Price:* ${listing.price} ETB / ብር ${listing.unit ? `/ ${listing.unit}` : ''}
 📏 *Format:* ${listing.unit || 'N/A'}
 📍 *Location:* ${listing.location}
 📞 *Contact:* ${listing.contact_phone || 'Contact via App'}
@@ -403,7 +421,18 @@ app.post('/api/listings', async (c) => {
     
     const final = await sql`UPDATE listings SET share_slug = ${shareSlug} WHERE id = ${newId} RETURNING *`;
     
-    const fullListing = { ...final[0], imageUrls: Array.isArray(imageUrls) ? imageUrls : [], price, unit, title, location, description, contact_phone: contact_phone || user.phone };
+    const fullListing = { 
+        ...final[0], 
+        imageUrls: Array.isArray(imageUrls) ? imageUrls : [], 
+        price, 
+        unit, 
+        title, 
+        location, 
+        description, 
+        contact_phone: contact_phone || user.phone,
+        sellerName: user.name,
+        sellerCompanyName: user.companyName
+    };
     c.executionCtx.waitUntil(postToTelegram(fullListing, c.env));
     
     return c.json({ ...final[0], id: String(final[0].id) });
@@ -446,7 +475,18 @@ app.put('/api/listings/:id', async (c) => {
     if (!result.length) return c.json({ message: 'Not authorized' }, 403);
     
     if (result[0].status === 'active') {
-        const fullListing = { ...result[0], imageUrls: result[0].image_url ? result[0].image_url.split(',') : [], price: result[0].price, unit: result[0].unit, title: result[0].title, location: result[0].location, description: result[0].description, contact_phone: result[0].contact_phone };
+        const fullListing = { 
+            ...result[0], 
+            imageUrls: result[0].image_url ? result[0].image_url.split(',') : [], 
+            price: result[0].price, 
+            unit: result[0].unit, 
+            title: result[0].title, 
+            location: result[0].location, 
+            description: result[0].description, 
+            contact_phone: result[0].contact_phone,
+            sellerName: user.id === String(result[0].user_id) ? user.name : null,
+            sellerCompanyName: user.id === String(result[0].user_id) ? user.companyName : null
+        };
         c.executionCtx.waitUntil(postToTelegram(fullListing, c.env));
     }
     
@@ -712,10 +752,21 @@ app.post('/api/admin/post-all-listings', async (c) => {
     if (!user.isAdmin) return c.json({ message: 'Not authorized' }, 403);
     
     const sql = neon(c.env.DATABASE_URL);
-    const listings = await sql`SELECT * FROM listings WHERE status = 'active' ORDER BY created_at DESC`;
+    const listings = await sql`
+        SELECT l.*, u.name as "sellerName", u.company_name as "sellerCompanyName"
+        FROM listings l
+        JOIN users u ON l.user_id = u.id
+        WHERE l.status = 'active' 
+        ORDER BY l.created_at DESC
+    `;
     
     for (const listing of listings) {
-        const fullListing = { ...listing, imageUrls: listing.image_url ? listing.image_url.split(',') : [] };
+        const fullListing = { 
+            ...listing, 
+            imageUrls: listing.image_url ? listing.image_url.split(',') : [],
+            sellerName: listing.sellerName,
+            sellerCompanyName: listing.sellerCompanyName
+        };
         c.executionCtx.waitUntil(postToTelegram(fullListing, c.env));
     }
     

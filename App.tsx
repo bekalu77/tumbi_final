@@ -8,9 +8,13 @@ import LanguageToggle from './components/LanguageToggle';
 import { translations, Language } from './translations';
 import { App as CapApp } from '@capacitor/app';
 
+// Ensure API_URL is strictly from environment or local dev
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const DEFAULT_API_URL = isLocal ? "http://localhost:8787" : "https://tumbi-backend.bekalu77.workers.dev";
-const API_URL = import.meta.env.VITE_API_URL || DEFAULT_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || (isLocal ? "http://localhost:8787" : "");
+
+if (!API_URL && !isLocal) {
+    console.error("CRITICAL: VITE_API_URL environment variable is not set!");
+}
 
 const PAGE_SIZE = 12;
 
@@ -41,7 +45,7 @@ export default function App() {
     search: '',
     mainCategory: 'all',
     subCategory: 'all',
-    city: 'All Cities', // Always use English for API filter stability
+    city: 'All Cities',
     sortBy: 'popular'
   });
 
@@ -117,6 +121,7 @@ export default function App() {
   }, []);
 
   const fetchListings = useCallback(async (currentOffset: number, filters = appliedFilters, clearExisting = false) => {
+    if (!API_URL && !isLocal) return;
     try {
       if (currentOffset === 0) setIsListingsLoading(true);
       else setIsLoadingMore(true);
@@ -170,9 +175,7 @@ export default function App() {
   }, [loadMore, hasMore, isLoadingMore, isListingsLoading]);
 
   useEffect(() => {
-    // Find English city name for API stability
     let cityForApi = 'All Cities';
-    const t_en = translations['en'];
     if (selectedCity !== t.allCities) {
         const cityData = getCities('en').find((c, i) => getCities(language)[i] === selectedCity);
         if (cityData) cityForApi = cityData;
@@ -207,7 +210,6 @@ export default function App() {
       const savedLang = localStorage.getItem('language') as Language;
       if (savedLang) setLanguage(savedLang);
 
-      // We still keep dark mode from system/storage but removed the toggle
       if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
       }
@@ -217,7 +219,7 @@ export default function App() {
   }, [handleIncomingUrl]);
 
   useEffect(() => {
-    if (user) { 
+    if (user && API_URL) { 
         const token = localStorage.getItem('token');
         if (token) {
             fetch(`${API_URL}/api/saved`, { headers: { 'x-access-token': token } })
