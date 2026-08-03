@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "npm run dev",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy --config wrangler.toml",
+    "deploy:dry": "wrangler deploy --config wrangler.toml --dry-run",
     "dev": "wrangler dev --remote --ip 127.0.0.1 --port 8787"
   },
   "dependencies": {

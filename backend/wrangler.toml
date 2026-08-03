@@ -2,6 +2,7 @@
 name = "tumbi-backend"
 main = "src/worker.ts"
 compatibility_date = "2024-04-05"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 R2_PUBLIC_URL = "https://pub-f4faac6ec4e94df08e2c56afbf983bf1.r2.dev"
