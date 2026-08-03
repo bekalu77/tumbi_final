@@ -8,7 +8,8 @@ export const CATEGORIES_DATA: Record<string, { en: string, am: string, icon: any
   mep: { en: 'MEP Supplies', am: 'የኤሌክትሪክና ቧንቧ ዕቃዎች', icon: <WrenchIcon className="w-5 h-5" /> },
   finishing: { en: 'Finishing & Interior', am: 'የፊኒሺንግ እና የውስጥ ማስጌጫ', icon: <HammerIcon className="w-5 h-5" /> },
   services: { en: 'Skilled Services', am: 'የባለሙያ አገልግሎቶች', icon: <ServicesIcon className="w-5 h-5" /> },
-  rentals: { en: 'Equipment & Tool Rental', am: 'የመሳሪያዎች ኪራይ', icon: <TruckIcon className="w-5 h-5" /> },
+  rentals: { en: 'Tools & Equipment Rental', am: 'መሳሪያዎች እና መሳሪያ ኪራይ', icon: <TruckIcon className="w-5 h-5" /> },
+  equipment: { en: 'Tools & Equipment', am: 'መሳሪያዎች እና መሳሪያዎች', icon: <TruckIcon className="w-5 h-5" /> },
   safety: { en: 'Site Safety & Accessories', am: 'የደህንነት መጠበቂያዎች', icon: <TruckIcon className="w-5 h-5" /> },
   machinery: { en: 'Heavy Machinery & Vehicles', am: 'ከባድ ማሽነሪዎች', icon: <TruckIcon className="w-5 h-5" /> },
   other: { en: 'Other & Miscellaneous', am: 'ሌሎች', icon: <HomeIcon className="w-5 h-5" /> },
@@ -81,6 +82,7 @@ export const SUB_CATEGORIES_DATA: Record<string, { value: string, en: string, am
     { value: 'scaffolding', en: 'Scaffolding & Props', am: 'ስካፎልዲንግ' },
     { value: 'other', en: 'Other Rental Equipment', am: 'ሌሎች ኪራዮች' },
   ],
+
   finishing: [
     { value: 'tiles', en: 'Tiles & Flooring', am: 'ሴራሚክ እና የወለል ንጣፍ' },
     { value: 'paint', en: 'Paints & Coatings', am: 'ቀለሞች' },

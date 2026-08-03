@@ -22,7 +22,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [isUserLoading, setIsUserLoading] = useState(true);
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>('am');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
 
@@ -208,7 +208,8 @@ export default function App() {
       setIsUserLoading(false);
       
       const savedLang = localStorage.getItem('language') as Language;
-      if (savedLang) setLanguage(savedLang);
+      if (savedLang === 'en' || savedLang === 'am') setLanguage(savedLang);
+      else setLanguage('am');
 
       if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
@@ -266,10 +267,11 @@ export default function App() {
     setUser(null); setSavedListingIds(new Set()); setViewState('home');
   };
 
-  const uploadPhotos = async (photos: File[]): Promise<string[]> => {
+  const uploadPhotos = async (photos: File[] = [], video?: File): Promise<{ imageUrls: string[]; videoUrl?: string }> => {
     const token = localStorage.getItem('token');
     const photoFormData = new FormData();
     photos.forEach((photo) => photoFormData.append('photos', photo));
+    if (video) photoFormData.append('videos', video);
     
     const uploadRes = await fetch(`${API_URL}/api/upload`, { 
         method: 'POST', 
@@ -288,16 +290,19 @@ export default function App() {
     }
 
     const uploadData = await uploadRes.json();
-    return uploadData.urls || [];
+    return {
+      imageUrls: uploadData.imageUrls || uploadData.urls || [],
+      videoUrl: uploadData.videoUrl || uploadData.videoUrls?.[0]
+    };
   };
 
-  const handleSaveListing = async (data: any, imageUrls: string[]) => {
+  const handleSaveListing = async (data: any, imageUrls: string[], videoUrl?: string) => {
     const token = localStorage.getItem('token');
     if (!token) { setShowAuth(true); return; }
     const isEditing = !!editingListing;
     setIsSavingListing(true);
     try {
-        const listingRes = await fetch(`${API_URL}/api/listings${isEditing ? `/${editingListing?.id}` : ''}`, { method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', 'x-access-token': token || '' }, body: JSON.stringify({ ...data, imageUrls }) });
+        const listingRes = await fetch(`${API_URL}/api/listings${isEditing ? `/${editingListing?.id}` : ''}`, { method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', 'x-access-token': token || '' }, body: JSON.stringify({ ...data, imageUrls, videoUrl }) });
         if (listingRes.ok) {
           handleRefresh(); setViewState('home'); setEditingListing(undefined);
         } else {
