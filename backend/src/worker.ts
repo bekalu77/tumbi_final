@@ -405,14 +405,14 @@ app.get('/api/share/:slug', async (c) => {
 
 app.post('/api/listings', async (c) => {
     const user = c.get('user');
-    const { title, price, unit, location, mainCategory, subCategory, description, imageUrls, contact_phone } = await c.req.json();
+    const { title, price, unit, location, mainCategory, subCategory, description, imageUrls, videoUrl, contact_phone } = await c.req.json();
     const sql = neon(c.env.DATABASE_URL);
     
     const imageString = Array.isArray(imageUrls) ? imageUrls.join(',') : '';
 
     const result = await sql`
-        INSERT INTO listings (title, price, unit, location, main_category, sub_category, description, image_url, user_id, contact_phone) 
-        VALUES (${title}, ${price}, ${unit}, ${location}, ${mainCategory}, ${subCategory}, ${description}, ${imageString}, ${parseInt(user.id)}, ${contact_phone || null}) 
+        INSERT INTO listings (title, price, unit, location, main_category, sub_category, description, image_url, video_url, user_id, contact_phone) 
+        VALUES (${title}, ${price}, ${unit}, ${location}, ${mainCategory}, ${subCategory}, ${description}, ${imageString}, ${videoUrl || null}, ${parseInt(user.id)}, ${contact_phone || null}) 
         RETURNING id
     `;
     
@@ -441,7 +441,7 @@ app.post('/api/listings', async (c) => {
 app.put('/api/listings/:id', async (c) => {
     const user = c.get('user');
     const id = c.req.param('id');
-    const { title, price, unit, location, mainCategory, subCategory, description, imageUrls, status, contact_phone } = await c.req.json();
+    const { title, price, unit, location, mainCategory, subCategory, description, imageUrls, videoUrl, status, contact_phone } = await c.req.json();
     const sql = neon(c.env.DATABASE_URL);
     
     const shareSlug = generateShareSlug(title, parseInt(id));
@@ -453,7 +453,7 @@ app.put('/api/listings/:id', async (c) => {
             UPDATE listings SET 
                 title = ${title}, price = ${price}, unit = ${unit}, location = ${location}, 
                 main_category = ${mainCategory}, sub_category = ${subCategory}, 
-                description = ${description}, image_url = ${imageString}, 
+                description = ${description}, image_url = ${imageString}, video_url = ${videoUrl || null},
                 status = ${status || 'active'}, contact_phone = ${contact_phone || null},
                 share_slug = ${shareSlug}
             WHERE id = ${parseInt(id)}
@@ -464,7 +464,7 @@ app.put('/api/listings/:id', async (c) => {
             UPDATE listings SET 
                 title = ${title}, price = ${price}, unit = ${unit}, location = ${location}, 
                 main_category = ${mainCategory}, sub_category = ${subCategory}, 
-                description = ${description}, image_url = ${imageString}, 
+                description = ${description}, image_url = ${imageString}, video_url = ${videoUrl || null},
                 status = ${status || 'active'}, contact_phone = ${contact_phone || null},
                 share_slug = ${shareSlug}
             WHERE id = ${parseInt(id)} AND user_id = ${parseInt(user.id)} 
@@ -580,26 +580,36 @@ app.put('/api/users/me', async (c) => {
 app.post('/api/upload', async (c) => {
     try {
         const formData = await c.req.formData();
-        const rawFiles = formData.getAll('photos');
-        if (!rawFiles || rawFiles.length === 0) return c.json({ message: 'No files' }, 400);
-        const urls: string[] = [];
+        const rawPhotos = formData.getAll('photos');
+        const rawVideos = formData.getAll('videos');
         const user = c.get('user');
         const userId = user?.id || 'anonymous';
         const publicUrl = c.env.R2_PUBLIC_URL.endsWith('/') 
             ? c.env.R2_PUBLIC_URL.slice(0, -1) 
             : c.env.R2_PUBLIC_URL;
 
-        for (const item of (rawFiles as any[])) {
+        const imageUrls: string[] = [];
+        for (const item of (rawPhotos as any[])) {
             if (typeof item === 'string') continue;
-            
             const fileName = String(item.name || 'image');
             const fileType = String(item.type || 'image/jpeg');
-            
             const key = `${userId}-${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
             await c.env.R2_BUCKET.put(key, item, { httpMetadata: { contentType: fileType } });
-            urls.push(`${publicUrl}/${key}`);
+            imageUrls.push(`${publicUrl}/${key}`);
         }
-        return c.json({ urls });
+
+        let videoUrl: string | undefined;
+        for (const item of (rawVideos as any[])) {
+            if (typeof item === 'string') continue;
+            const fileName = String(item.name || 'video');
+            const fileType = String(item.type || 'video/mp4');
+            const key = `${userId}-${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+            await c.env.R2_BUCKET.put(key, item, { httpMetadata: { contentType: fileType } });
+            videoUrl = `${publicUrl}/${key}`;
+        }
+
+        if (rawPhotos.length === 0 && rawVideos.length === 0) return c.json({ message: 'No files' }, 400);
+        return c.json({ urls: imageUrls, imageUrls, videoUrl, videoUrls: videoUrl ? [videoUrl] : [] });
     } catch (e: any) { return c.json({ message: e.message }, 500); }
 });
 

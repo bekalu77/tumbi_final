@@ -33,6 +33,7 @@ CREATE TABLE listings (
     main_category VARCHAR(100),
     sub_category VARCHAR(100),
     image_url TEXT, -- Stored as comma-separated string
+    video_url TEXT,
     status VARCHAR(50) DEFAULT 'active',
     views INTEGER DEFAULT 0,
     share_slug VARCHAR(255) UNIQUE,
