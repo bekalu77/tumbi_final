@@ -31,7 +31,6 @@ async function postToTelegram(listing: any, env: Bindings) {
     let sellerName = listing.sellerName;
     let sellerCompanyName = listing.sellerCompanyName;
     
-    // Fetch seller info if not provided (e.g., from an update or admin task)
     if (!sellerName && listing.user_id) {
         try {
             const sql = neon(env.DATABASE_URL);
@@ -68,24 +67,30 @@ ${listing.description ? (listing.description.length > 150 ? listing.description.
 
     for (const chat of TELEGRAM_CHATS) {
         try {
-            const endpoint = firstImage ? 'sendPhoto' : 'sendMessage';
+            let endpoint = 'sendMessage';
             const body: any = {
                 chat_id: chat.id,
                 parse_mode: 'Markdown',
             };
 
             if (firstImage) {
+                endpoint = 'sendPhoto';
                 body.photo = firstImage;
                 body.caption = caption;
             } else {
                 body.text = caption;
             }
 
-            await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${endpoint}`, {
+            const res = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
             });
+
+            const data: any = await res.json();
+            if (!data.ok) {
+                console.error(`Telegram Post Failed (${chat.name}):`, data.description || data);
+            }
         } catch (e) {
             console.error(`Telegram Post Error (${chat.name}):`, e);
         }
@@ -405,14 +410,14 @@ app.get('/api/share/:slug', async (c) => {
 
 app.post('/api/listings', async (c) => {
     const user = c.get('user');
-    const { title, price, unit, location, mainCategory, subCategory, description, imageUrls, videoUrl, contact_phone } = await c.req.json();
+    const { title, price, unit, location, mainCategory, subCategory, description, imageUrls, contact_phone } = await c.req.json();
     const sql = neon(c.env.DATABASE_URL);
     
     const imageString = Array.isArray(imageUrls) ? imageUrls.join(',') : '';
 
     const result = await sql`
-        INSERT INTO listings (title, price, unit, location, main_category, sub_category, description, image_url, video_url, user_id, contact_phone) 
-        VALUES (${title}, ${price}, ${unit}, ${location}, ${mainCategory}, ${subCategory}, ${description}, ${imageString}, ${videoUrl || null}, ${parseInt(user.id)}, ${contact_phone || null}) 
+        INSERT INTO listings (title, price, unit, location, main_category, sub_category, description, image_url, user_id, contact_phone) 
+        VALUES (${title}, ${price}, ${unit}, ${location}, ${mainCategory}, ${subCategory}, ${description}, ${imageString}, ${parseInt(user.id)}, ${contact_phone || null}) 
         RETURNING id
     `;
     
@@ -441,7 +446,7 @@ app.post('/api/listings', async (c) => {
 app.put('/api/listings/:id', async (c) => {
     const user = c.get('user');
     const id = c.req.param('id');
-    const { title, price, unit, location, mainCategory, subCategory, description, imageUrls, videoUrl, status, contact_phone } = await c.req.json();
+    const { title, price, unit, location, mainCategory, subCategory, description, imageUrls, status, contact_phone } = await c.req.json();
     const sql = neon(c.env.DATABASE_URL);
     
     const shareSlug = generateShareSlug(title, parseInt(id));
@@ -453,7 +458,7 @@ app.put('/api/listings/:id', async (c) => {
             UPDATE listings SET 
                 title = ${title}, price = ${price}, unit = ${unit}, location = ${location}, 
                 main_category = ${mainCategory}, sub_category = ${subCategory}, 
-                description = ${description}, image_url = ${imageString}, video_url = ${videoUrl || null},
+                description = ${description}, image_url = ${imageString},
                 status = ${status || 'active'}, contact_phone = ${contact_phone || null},
                 share_slug = ${shareSlug}
             WHERE id = ${parseInt(id)}
@@ -464,7 +469,7 @@ app.put('/api/listings/:id', async (c) => {
             UPDATE listings SET 
                 title = ${title}, price = ${price}, unit = ${unit}, location = ${location}, 
                 main_category = ${mainCategory}, sub_category = ${subCategory}, 
-                description = ${description}, image_url = ${imageString}, video_url = ${videoUrl || null},
+                description = ${description}, image_url = ${imageString},
                 status = ${status || 'active'}, contact_phone = ${contact_phone || null},
                 share_slug = ${shareSlug}
             WHERE id = ${parseInt(id)} AND user_id = ${parseInt(user.id)} 
@@ -581,7 +586,6 @@ app.post('/api/upload', async (c) => {
     try {
         const formData = await c.req.formData();
         const rawPhotos = formData.getAll('photos');
-        const rawVideos = formData.getAll('videos');
         const user = c.get('user');
         const userId = user?.id || 'anonymous';
         const publicUrl = c.env.R2_PUBLIC_URL.endsWith('/') 
@@ -598,18 +602,8 @@ app.post('/api/upload', async (c) => {
             imageUrls.push(`${publicUrl}/${key}`);
         }
 
-        let videoUrl: string | undefined;
-        for (const item of (rawVideos as any[])) {
-            if (typeof item === 'string') continue;
-            const fileName = String(item.name || 'video');
-            const fileType = String(item.type || 'video/mp4');
-            const key = `${userId}-${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-            await c.env.R2_BUCKET.put(key, item, { httpMetadata: { contentType: fileType } });
-            videoUrl = `${publicUrl}/${key}`;
-        }
-
-        if (rawPhotos.length === 0 && rawVideos.length === 0) return c.json({ message: 'No files' }, 400);
-        return c.json({ urls: imageUrls, imageUrls, videoUrl, videoUrls: videoUrl ? [videoUrl] : [] });
+        if (rawPhotos.length === 0) return c.json({ message: 'No files' }, 400);
+        return c.json({ urls: imageUrls, imageUrls });
     } catch (e: any) { return c.json({ message: e.message }, 500); }
 });
 

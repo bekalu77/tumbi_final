@@ -23,7 +23,6 @@ export interface Listing {
   subCategory: string;
   description: string;
   imageUrls: string[];
-  videoUrl?: string;
   createdAt: Date;
   sellerName: string;
   sellerId?: string;

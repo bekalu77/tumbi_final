@@ -267,16 +267,15 @@ export default function App() {
     setUser(null); setSavedListingIds(new Set()); setViewState('home');
   };
 
-  const uploadPhotos = async (photos: File[] = [], video?: File): Promise<{ imageUrls: string[]; videoUrl?: string }> => {
+  const uploadPhotos = async (photos: File[] = []): Promise<{ imageUrls: string[] }> => {
     const token = localStorage.getItem('token');
     const photoFormData = new FormData();
     photos.forEach((photo) => photoFormData.append('photos', photo));
-    if (video) photoFormData.append('videos', video);
-    
-    const uploadRes = await fetch(`${API_URL}/api/upload`, { 
-        method: 'POST', 
-        headers: { 'x-access-token': token || '' }, 
-        body: photoFormData 
+
+    const uploadRes = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        headers: { 'x-access-token': token || '' },
+        body: photoFormData
     });
 
     if (!uploadRes.ok) {
@@ -291,18 +290,17 @@ export default function App() {
 
     const uploadData = await uploadRes.json();
     return {
-      imageUrls: uploadData.imageUrls || uploadData.urls || [],
-      videoUrl: uploadData.videoUrl || uploadData.videoUrls?.[0]
+      imageUrls: uploadData.imageUrls || uploadData.urls || []
     };
   };
 
-  const handleSaveListing = async (data: any, imageUrls: string[], videoUrl?: string) => {
+  const handleSaveListing = async (data: any, imageUrls: string[]) => {
     const token = localStorage.getItem('token');
     if (!token) { setShowAuth(true); return; }
     const isEditing = !!editingListing;
     setIsSavingListing(true);
     try {
-        const listingRes = await fetch(`${API_URL}/api/listings${isEditing ? `/${editingListing?.id}` : ''}`, { method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', 'x-access-token': token || '' }, body: JSON.stringify({ ...data, imageUrls, videoUrl }) });
+        const listingRes = await fetch(`${API_URL}/api/listings${isEditing ? `/${editingListing?.id}` : ''}`, { method: isEditing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', 'x-access-token': token || '' }, body: JSON.stringify({ ...data, imageUrls }) });
         if (listingRes.ok) {
           handleRefresh(); setViewState('home'); setEditingListing(undefined);
         } else {

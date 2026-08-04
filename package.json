@@ -9,8 +9,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "deploy:frontend": "npx vercel deploy --prod",
-    "deploy:backend": "cd backend && npx wrangler deploy",
-    "deploy": "npm run build && npm run deploy:frontend && npm run deploy:backend"
+    "deploy:backend": "cd backend && npx wrangler deploy --config wrangler.toml",
+    "deploy": "npm run deploy:frontend && npm run deploy:backend"
   },
   "dependencies": {
     "@capacitor/android": "^5.7.4",

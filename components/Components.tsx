@@ -334,17 +334,16 @@ export const RecommendedCard: React.FC<{category: any, onClick: () => void}> = (
 );
 
 // --- Add/Edit Listing Form ---
-interface AddListingProps { onClose: () => void; onSubmit: (listingData: any, imageUrls: string[], videoUrl?: string) => void; onUploadPhotos: (photos: File[], video?: File) => Promise<{ imageUrls: string[]; videoUrl?: string }>; initialData?: Listing; userPhone?: string; isSubmitting?: boolean; language: Language; }
+interface AddListingProps { onClose: () => void; onSubmit: (listingData: any, imageUrls: string[]) => void; onUploadPhotos: (photos: File[]) => Promise<{ imageUrls: string[] }>; initialData?: Listing; userPhone?: string; isSubmitting?: boolean; language: Language; }
 export const AddListingForm = ({ onClose, onSubmit, onUploadPhotos, initialData, userPhone, isSubmitting = false, language }: AddListingProps) => {
     const t = translations[language];
     const [formData, setFormData] = useState({ title: '', price: '', unit: 'pcs', location: getCities(language)[0], mainCategory: '', subCategory: '', description: '', contactPhone: '' });
     const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
     const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
-    const [videoUrl, setVideoUrl] = useState<string | undefined>(initialData?.videoUrl);
     const [isUploading, setIsUploading] = useState(false);
     const [step, setStep] = useState(0);
-    const photoInputRef = useRef<HTMLInputElement>(null);
-    const videoInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
+    const galleryInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (initialData) {
@@ -359,20 +358,11 @@ export const AddListingForm = ({ onClose, onSubmit, onUploadPhotos, initialData,
                 contactPhone: initialData.contact_phone || initialData.sellerPhone || ''
             });
             if (Array.isArray(initialData.imageUrls)) { setPhotoPreviews(initialData.imageUrls); setUploadedUrls(initialData.imageUrls); }
-            if (initialData.videoUrl) setVideoUrl(initialData.videoUrl);
         } else if (userPhone) {
             setFormData(prev => ({ ...prev, contactPhone: userPhone }));
         }
     }, [initialData, userPhone]);
 
-    useEffect(() => {
-        if (!initialData && !photoPreviews.length) {
-            const timer = window.setTimeout(() => {
-                photoInputRef.current?.click();
-            }, 150);
-            return () => window.clearTimeout(timer);
-        }
-    }, [initialData, photoPreviews.length]);
 
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files) return;
@@ -393,46 +383,6 @@ export const AddListingForm = ({ onClose, onSubmit, onUploadPhotos, initialData,
         }
     };
 
-    const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || !e.target.files[0]) return;
-        const file = e.target.files[0];
-        const maxSizeBytes = 25 * 1024 * 1024;
-        const maxDurationMs = 15000;
-
-        if (file.size > maxSizeBytes) {
-            alert('Video must be 25 MB or less.');
-            e.target.value = '';
-            return;
-        }
-
-        const videoUrlCandidate = URL.createObjectURL(file);
-        const metadataCheck = await new Promise<boolean>((resolve) => {
-            const tempVideo = document.createElement('video');
-            tempVideo.preload = 'metadata';
-            tempVideo.onloadedmetadata = () => {
-                resolve(tempVideo.duration <= 15);
-            };
-            tempVideo.onerror = () => resolve(false);
-            tempVideo.src = videoUrlCandidate;
-        });
-
-        if (!metadataCheck) {
-            alert('Video must be 15 seconds or less.');
-            URL.revokeObjectURL(videoUrlCandidate);
-            e.target.value = '';
-            return;
-        }
-
-        setIsUploading(true);
-        try {
-            const uploadResult = await onUploadPhotos([], file);
-            if (uploadResult.videoUrl) setVideoUrl(uploadResult.videoUrl);
-        } catch (err) { console.error('Video upload error', err); } finally {
-            setIsUploading(false);
-            e.target.value = '';
-        }
-    };
-
     const removePhoto = (idx: number) => {
         setPhotoPreviews(prev => prev.filter((_, i) => i !== idx));
         setUploadedUrls(prev => prev.filter((_, i) => i !== idx));
@@ -444,7 +394,7 @@ export const AddListingForm = ({ onClose, onSubmit, onUploadPhotos, initialData,
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (uploadedUrls.length === 0) { alert('Please add at least one photo.'); return; }
-        onSubmit({ ...formData, price: Number(formData.price), contact_phone: formData.contactPhone }, uploadedUrls, videoUrl);
+        onSubmit({ ...formData, price: Number(formData.price), contact_phone: formData.contactPhone }, uploadedUrls);
     };
 
     return (
@@ -468,24 +418,22 @@ export const AddListingForm = ({ onClose, onSubmit, onUploadPhotos, initialData,
                                 {photoPreviews.length < 5 && (
                                     <button
                                         type="button"
-                                        onClick={() => photoInputRef.current?.click()}
-                                        className="aspect-square border-2 border-dashed border-gray-300 dark:border-dark-border rounded-lg flex items-center justify-center text-gray-500 hover:border-tumbi-500 hover:text-tumbi-500 transition-colors"
+                                        onClick={() => cameraInputRef.current?.click()}
+                                        className="aspect-square border-2 border-dashed border-gray-300 dark:border-dark-border rounded-lg flex items-center justify-center text-gray-500 hover:border-tumbi-500 hover:text-tumbi-500 transition-colors active:scale-[0.97]"
                                         aria-label="Add product photo"
                                     >
                                         <PlusIcon className="w-8 h-8" />
                                     </button>
                                 )}
                             </div>
-                            <div className="mt-3 border-t border-gray-200 dark:border-dark-border pt-3">
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Short Video (optional)</label>
-                                <div className="flex items-center gap-2">
-                                    <button type="button" onClick={() => videoInputRef.current?.click()} className="bg-gray-100 dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-lg px-3 py-2 text-xs font-medium text-gray-700 dark:text-dark-text">Choose video</button>
-                                    {videoUrl && <span className="text-[11px] text-gray-500 truncate">Video attached</span>}
-                                </div>
-                                <input type="file" ref={videoInputRef} onChange={handleVideoChange} accept="video/*" className="hidden" />
-                                <p className="text-[10px] text-gray-400 mt-2">Max 15 seconds · 25 MB</p>
+                            <div className="mt-3 space-y-2 border-t border-gray-200 dark:border-dark-border pt-3">
+                                <button type="button" onClick={() => galleryInputRef.current?.click()} className="w-full bg-gray-100 dark:bg-dark-card border border-gray-200 dark:border-dark-border text-gray-700 dark:text-dark-text rounded-lg px-3 py-2.5 text-xs font-bold active:scale-[0.98] transition-all flex items-center justify-center">
+                                    <PlusIcon className="w-4 h-4 mr-2" />
+                                    {t.chooseGallery}
+                                </button>
                             </div>
-                            <input type="file" multiple ref={photoInputRef} onChange={handleImageChange} accept="image/*" capture="environment" className="hidden" />
+                            <input type="file" multiple ref={galleryInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
+                            <input type="file" multiple ref={cameraInputRef} onChange={handleImageChange} accept="image/*" capture="environment" className="hidden" />
                         </div>
                     )}
                     {step === 1 && (
@@ -515,7 +463,7 @@ export const AddListingForm = ({ onClose, onSubmit, onUploadPhotos, initialData,
                         <div><label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">{t.location}</label><select required className="w-full border border-gray-300 dark:border-dark-border rounded-lg p-3 bg-white dark:bg-dark-bg text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-tumbi-500 outline-none text-sm cursor-pointer" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})}>{getCities(language).map(city => <option key={city} value={city}>{city}</option>)}</select><div className="mt-2"><label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">{t.description}</label><textarea required rows={4} className="w-full border border-gray-300 dark:border-dark-border rounded-lg p-3 bg-white dark:bg-dark-bg text-gray-900 dark:text-dark-text focus:ring-2 focus:ring-tumbi-500 outline-none text-sm" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} /></div></div>
                     )}
                     <div className="flex items-center space-x-2 pt-2">
-                        {step > 0 && <button type="button" onClick={() => setStep(s => s - 1)} className="flex-1 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-lg py-3 font-medium">Back</button>}
+                        {step > 0 && <button type="button" onClick={() => setStep(s => s - 1)} className="flex-1 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-lg py-3 font-medium">{t.back}</button>}
                         {step < 4 && (
                             <button
                                 type="button"
@@ -523,13 +471,14 @@ export const AddListingForm = ({ onClose, onSubmit, onUploadPhotos, initialData,
                                 onClick={() => setStep(s => s + 1)}
                                 className="flex-1 bg-tumbi-600 text-white font-bold py-3 rounded-lg hover:bg-tumbi-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Next
+                                {t.next}
                             </button>
                         )}
                         {step === 4 && <button type="submit" disabled={isSubmitting || isUploading} className="flex-1 bg-tumbi-600 text-white font-bold py-3 rounded-lg flex justify-center items-center active:scale-[0.98] transition-all">{isSubmitting ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : t.postListing}</button>}
                     </div>
                 </form>
             </div>
+
         </div>
     );
 };
