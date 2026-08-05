@@ -81,7 +81,15 @@ export const translations = {
     back: 'Back',
     next: 'Next',
     postNow: 'Post Ad Now',
-    updateNow: 'Update Ad Now'
+    updateNow: 'Update Ad Now',
+    installApp: 'Install Tumbi',
+    installSubtitle: 'Add to Home Screen for a faster experience',
+    install: 'Install',
+    installIosTitle: 'Install Tumbi on your device',
+    installIosSubtitle: 'Tap the Share button, then "Add to Home Screen"',
+    installIosShare: 'Share',
+    installIosAdd: 'Add to Home Screen',
+    installDismiss: 'Not now'
   },
   am: {
     appName: 'ቱምቢ',
@@ -162,6 +170,14 @@ export const translations = {
     back: 'ተመለስ',
     next: 'ቀጣይ',
     postNow: 'አሁን ይለጥፉ',
-    updateNow: 'አሁን ያድሱ'
+    updateNow: 'አሁን ያድሱ',
+    installApp: 'ቱምቢን ይጫኑ',
+    installSubtitle: 'ለፈጣን ተሞክሮ ወደ መነሻ ገጽ ያክሉ',
+    install: 'ጫን',
+    installIosTitle: 'ቱምቢን በመሣሪያዎ ላይ ይጫኑ',
+    installIosSubtitle: 'የ Share ቁልፍን ይጫኑ፣ ከዚያ "Add to Home Screen" ይምረጡ',
+    installIosShare: 'Share',
+    installIosAdd: 'Add to Home Screen',
+    installDismiss: 'አሁን አይደለም'
   }
 };

@@ -12,6 +12,8 @@ backend/.dev.vars
 dist
 backend/dist
 build
+backend/.wrangler
+.wrangler
 
 # Logs
 npm-debug.log*

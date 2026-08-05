@@ -1,0 +1,65 @@
+{
+  "name": "Tumbi - Marketplace",
+  "short_name": "Tumbi",
+  "description": "Tumbi marketplace app - Buy and sell construction materials, services, tools, and more",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay"],
+  "background_color": "#f3f4f6",
+  "theme_color": "#ff7a00",
+  "orientation": "portrait",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["marketplace", "shopping", "business"],
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/SCREENSHOOTS.png",
+      "sizes": "1080x1080",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tumbi marketplace home screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search Listings",
+      "short_name": "Search",
+      "description": "Search for listings on Tumbi",
+      "url": "/?search",
+      "icons": [
+        {
+          "src": "/assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Post a Listing",
+      "short_name": "Sell",
+      "description": "Post a new listing on Tumbi",
+      "url": "/?sell",
+      "icons": [
+        {
+          "src": "/assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

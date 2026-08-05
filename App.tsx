@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { getCategories, getSubCategories, getCities } from './constants';
 import { Listing, ViewState, User, ChatSession } from './types';
 import { ListingCard, AddListingForm, DetailView, SavedView, MessagesView, ProfileView, AuthModal, ChatConversationView, EditProfileModal, VendorProfileView, MaintenanceView } from './components/Components';
-import { SearchIcon, PlusIcon, HomeIcon, UserIcon, MessageCircleIcon, SaveIcon, RefreshCwIcon, TumbiLogo } from './components/Icons';
+import { SearchIcon, PlusIcon, HomeIcon, UserIcon, MessageCircleIcon, SaveIcon, RefreshCwIcon, XIcon, DownloadIcon, ShareIcon, TumbiLogo } from './components/Icons';
 import LanguageToggle from './components/LanguageToggle';
 import { translations, Language } from './translations';
 import { App as CapApp } from '@capacitor/app';
@@ -25,6 +25,13 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('am');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [dismissedInstall, setDismissedInstall] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [showIOSInstall, setShowIOSInstall] = useState(false);
+  const [dismissedIOSInstall, setDismissedIOSInstall] = useState(false);
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [isListingsLoading, setIsListingsLoading] = useState(true);
@@ -70,7 +77,12 @@ export default function App() {
     try {
         const url = new URL(urlStr);
         const listingParam = url.searchParams.get('listing');
-        if (listingParam) { openListing(listingParam, false); }
+        if (listingParam) { openListing(listingParam, false); return; }
+        // Handle manifest shortcuts
+        const sellParam = url.searchParams.get('sell');
+        if (sellParam !== null) { setViewState('sell'); return; }
+        const searchParam = url.searchParams.get('search');
+        if (searchParam !== null) { (document.querySelector('input[placeholder]') as HTMLInputElement)?.focus(); }
     } catch (e) { console.error("Failed to parse incoming URL", e); }
   }, []);
 
@@ -198,6 +210,60 @@ export default function App() {
     setSelectedMainCategory('all'); setSelectedSubCategory('all'); setSelectedCity(translations[language].allCities); setSearchInput(''); setSortBy('popular');
     setAppliedFilters({ search: '', mainCategory: 'all', subCategory: 'all', city: 'All Cities', sortBy: 'popular' });
     setViewState('home');
+  };
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    };
+    const handleStandalone = () => {
+      if (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true) {
+        setIsInstalled(true);
+      }
+    };
+
+    // Detect iOS Safari (no beforeinstallprompt support)
+    const ua = navigator.userAgent;
+    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+    const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+    setIsIOS(isIOSDevice && isSafari);
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    handleStandalone();
+    window.matchMedia('(display-mode: standalone)').addEventListener('change', handleStandalone);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.matchMedia('(display-mode: standalone)').removeEventListener('change', handleStandalone);
+    };
+  }, []);
+
+  // Show iOS install prompt after a short delay if not installed and not dismissed
+  useEffect(() => {
+    if (isIOS && !isInstalled && !dismissedIOSInstall) {
+      const timer = setTimeout(() => setShowIOSInstall(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isIOS, isInstalled, dismissedIOSInstall]);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const choiceResult = await deferredPrompt.userChoice;
+    if (choiceResult.outcome === 'accepted') {
+      setIsInstalled(true);
+      setIsInstallable(false);
+    }
+    setDeferredPrompt(null);
   };
 
   useEffect(() => {
@@ -396,6 +462,45 @@ export default function App() {
                 </div>
             </div>
         </header>
+
+        {isInstallable && !isInstalled && !dismissedInstall && (
+            <div className="fixed bottom-20 left-0 right-0 z-40 flex justify-center px-4">
+                <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl border border-gray-200 dark:border-dark-border p-4 flex items-center gap-3 max-w-sm w-full animate-in slide-in-from-bottom duration-300">
+                    <img src="/assets/icon-192.png" alt="Tumbi" className="w-12 h-12 rounded-xl" />
+                    <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-gray-900 dark:text-dark-text">{t.installApp}</p>
+                        <p className="text-[11px] text-gray-500 dark:text-dark-subtext truncate">{t.installSubtitle}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => setDismissedInstall(true)} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-dark-text transition-colors"><XIcon className="w-4 h-4" /></button>
+                        <button onClick={handleInstallClick} className="bg-tumbi-600 hover:bg-tumbi-700 text-white text-xs font-bold px-4 py-2 rounded-lg active:scale-[0.97] transition-all flex items-center gap-1"><DownloadIcon className="w-3.5 h-3.5" />{t.install}</button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {showIOSInstall && isIOS && !isInstalled && !dismissedIOSInstall && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm">
+                <div className="bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-gray-200 dark:border-dark-border p-6 max-w-sm w-full animate-in zoom-in-95 duration-200">
+                    <div className="flex items-start gap-3 mb-4">
+                        <img src="/assets/icon-192.png" alt="Tumbi" className="w-14 h-14 rounded-2xl" />
+                        <div className="flex-1">
+                            <p className="font-bold text-base text-gray-900 dark:text-dark-text">{t.installIosTitle}</p>
+                            <p className="text-xs text-gray-500 dark:text-dark-subtext mt-1">{t.installIosSubtitle}</p>
+                        </div>
+                        <button onClick={() => { setShowIOSInstall(false); setDismissedIOSInstall(true); }} className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-dark-text transition-colors"><XIcon className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex items-center gap-3 bg-gray-50 dark:bg-dark-bg rounded-xl p-3 mb-4">
+                        <div className="flex items-center justify-center w-10 h-10 bg-tumbi-100 dark:bg-tumbi-900/30 rounded-lg text-tumbi-600 dark:text-tumbi-400 flex-shrink-0"><ShareIcon className="w-5 h-5" /></div>
+                        <p className="text-xs text-gray-600 dark:text-dark-subtext font-medium">{t.installIosShare}</p>
+                        <div className="flex-1 border-t border-dashed border-gray-300 dark:border-dark-border"></div>
+                        <div className="flex items-center justify-center w-10 h-10 bg-tumbi-100 dark:bg-tumbi-900/30 rounded-lg text-tumbi-600 dark:text-tumbi-400 flex-shrink-0"><PlusIcon className="w-5 h-5" /></div>
+                        <p className="text-xs text-gray-600 dark:text-dark-subtext font-medium">{t.installIosAdd}</p>
+                    </div>
+                    <button onClick={() => { setShowIOSInstall(false); setDismissedIOSInstall(true); }} className="w-full bg-tumbi-600 hover:bg-tumbi-700 text-white text-sm font-bold py-3 rounded-xl active:scale-[0.98] transition-all">{t.installDismiss}</button>
+                </div>
+            </div>
+        )}
 
         <main className="max-w-7xl mx-auto px-4 py-8">
             {viewState === 'home' && (
