@@ -1,11 +1,11 @@
-const CACHE_NAME = 'tumbi-cache-v2';
+const CACHE_NAME = 'tumbi-cache-v3';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './assets/icon-192.png',
-  './assets/icon-512.png',
-  './assets/icon.png'
+  'https://pub-f4faac6ec4e94df08e2c56afbf983bf1.r2.dev/icon-192.png',
+  'https://pub-f4faac6ec4e94df08e2c56afbf983bf1.r2.dev/icon-512.png',
+  'https://pub-f4faac6ec4e94df08e2c56afbf983bf1.r2.dev/icon.png'
 ];
 
 // Install: cache the app shell

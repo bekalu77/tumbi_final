@@ -466,7 +466,7 @@ export default function App() {
         {isInstallable && !isInstalled && !dismissedInstall && (
             <div className="fixed bottom-20 left-0 right-0 z-40 flex justify-center px-4">
                 <div className="bg-white dark:bg-dark-card rounded-xl shadow-2xl border border-gray-200 dark:border-dark-border p-4 flex items-center gap-3 max-w-sm w-full animate-in slide-in-from-bottom duration-300">
-                    <img src="/assets/icon-192.png" alt="Tumbi" className="w-12 h-12 rounded-xl" />
+                    <img src="https://pub-f4faac6ec4e94df08e2c56afbf983bf1.r2.dev/icon-192.png" alt="Tumbi" className="w-12 h-12 rounded-xl" />
                     <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm text-gray-900 dark:text-dark-text">{t.installApp}</p>
                         <p className="text-[11px] text-gray-500 dark:text-dark-subtext truncate">{t.installSubtitle}</p>
@@ -483,7 +483,7 @@ export default function App() {
             <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm">
                 <div className="bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-gray-200 dark:border-dark-border p-6 max-w-sm w-full animate-in zoom-in-95 duration-200">
                     <div className="flex items-start gap-3 mb-4">
-                        <img src="/assets/icon-192.png" alt="Tumbi" className="w-14 h-14 rounded-2xl" />
+                        <img src="https://pub-f4faac6ec4e94df08e2c56afbf983bf1.r2.dev/icon-192.png" alt="Tumbi" className="w-14 h-14 rounded-2xl" />
                         <div className="flex-1">
                             <p className="font-bold text-base text-gray-900 dark:text-dark-text">{t.installIosTitle}</p>
                             <p className="text-xs text-gray-500 dark:text-dark-subtext mt-1">{t.installIosSubtitle}</p>
